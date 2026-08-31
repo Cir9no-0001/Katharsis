@@ -1,7 +1,7 @@
 """
 File Name: katharsis.py
 Author: Stanley Chen
-Version: 1.0.0
+Version: 1.0.1
 Date Created: August 31, 2026
 Description: 
     Automates Instagram message scanning and removal using Playwright.
@@ -77,16 +77,52 @@ def is_unavailable_content(message):
     )
 
 
-def scan_messages(page):
+def create_message_signature(message):
+    box = message.bounding_box()
 
+    if not box:
+        return None
+
+    try:
+        text = message.inner_text().strip()
+    except:
+        text = ""
+
+    if is_unavailable_content(message):
+        content_type = "UNAVAILABLE"
+
+    elif text:
+        content_type = "TEXT"
+
+    else:
+        content_type = "MEDIA"
+
+    side = (
+        "LEFT"
+        if box["x"] < 1200
+        else
+        "RIGHT"
+    )
+
+    return (
+        content_type,
+        text[:50],
+        round(box["width"]),
+        round(box["height"]),
+        side
+    )
+
+
+def scan_messages(page):
     deleted_count = 0
 
     while True:
-
+        # TO-DO: Change deletion limiter when testing over
         if deleted_count >= MAX_DELETE:
             print("Delete limit reached")
             break
 
+        # TO-DO: Fix message detection, signature display and selection here
         messages = get_messages(page)
 
         if not messages:
@@ -94,7 +130,6 @@ def scan_messages(page):
             break
 
         target = messages[-1]
-
         box = target.bounding_box()
 
         if not box:
@@ -128,39 +163,48 @@ def scan_messages(page):
         else:
             print("[MEDIA]")
 
-        # Try deleting current target
+        # Delete message if ownership
         if DELETE_MODE and unsend_message(page, target):
-
             deleted_count += 1
+            print(f"Deleted {deleted_count}/{MAX_DELETE}")
 
-            print(
-                f"Deleted {deleted_count}/{MAX_DELETE}"
-            )
-
-            # Let Instagram rebuild DOM
-            page.wait_for_timeout(1500)
+            # IMPORTANT: Increase this if laggy DOM loading
+            page.wait_for_timeout(1000)
 
             continue
 
-        # Not ours -> move upward
         print("Not deletable, scrolling")
 
-        box = target.bounding_box()
+        # Jump if cannot delete message/no ownership
+        target_signature = create_message_signature(target)
+        scroll_amount = 200
 
-        if box:
+        while True:
+            scroll_message(page, scroll_amount)
+            page.wait_for_timeout(1500)
+            messages = get_messages(page)
 
-            scroll_amount = box["height"] + 100
+            if not messages:
+                print("No more messages")
+                return
 
-        else:
+            newest = messages[-1]
+            newest_signature = create_message_signature(newest)
 
-            scroll_amount = 500
+            print("Old:", target_signature)
+            print("New:", newest_signature)
 
-        scroll_message(
-            page,
-            scroll_amount
-        )
+            if newest_signature != target_signature:
+                print("Successfully moved past message")
+                break
 
-        page.wait_for_timeout(1500)
+            print("Same message still visible, increasing scroll")
+
+            scroll_amount += 200
+
+            if scroll_amount > 1200:
+                print("Could not move past message")
+                break
 
 
 def find_message_container(element):
@@ -186,19 +230,16 @@ def get_messages(page):
     result = []
     seen = []
 
-    # Normal text + media detection
-    candidates = page.locator(
-        "div[dir='auto'], img.x1iyjqo2.x193iq5w.xl1xv1r"
-    )
+    # Normal text + media detection below
+
+    # VERY IMPORTANT: THIS SHIT CHANGES AND BREAKS EVERYTHING IF IG UPDATES
+    candidates = page.locator("div[dir='auto'], img.x1iyjqo2.x193iq5w.xl1xv1r")
+    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     for i in range(candidates.count()):
-
         element = candidates.nth(i)
-
         container = find_message_container(element)
-
         if container:
-
             duplicate = False
 
             for old in seen:
@@ -210,17 +251,13 @@ def get_messages(page):
                 seen.append(container)
                 result.append(container)
 
-    # Restore unavailable message detection
-    unavailable_messages = page.locator(
-        "span[dir='auto']"
-    )
+    # Unavalible message detection below
+
+    unavailable_messages = page.locator("span[dir='auto']")
 
     for i in range(unavailable_messages.count()):
-
         msg = unavailable_messages.nth(i)
-
         if is_unavailable_content(msg):
-
             parent = msg
 
             for _ in range(5):
@@ -311,66 +348,6 @@ def unsend_message(page, message):
 # SCROLL MESSAGE HISTORY
 # ==========================
 
-def scroll_past_message(page, message):
-
-    box = message.bounding_box()
-
-    if not box:
-        print("Could not measure message")
-        return False
-
-    height = box["height"]
-
-    print(
-        f"Scrolling past message height: {height}px"
-    )
-
-    result = page.evaluate(
-        """
-        (amount) => {
-
-            const elements = [
-                ...document.querySelectorAll("*")
-            ];
-
-            const target = elements.find(e => {
-
-                const style = getComputedStyle(e);
-
-                return (
-                    style.overflowY === "scroll" &&
-                    e.scrollHeight > e.clientHeight
-                );
-
-            });
-
-            if (!target) {
-                return null;
-            }
-
-            const before = target.scrollTop;
-
-            target.scrollBy(
-                0,
-                -amount
-            );
-
-            return {
-                before: before,
-                after: target.scrollTop
-            };
-        }
-        """,
-        height
-    )
-
-    print(result)
-
-    page.wait_for_timeout(1500)
-
-    return True
-
-
 def scroll_message(page, amount):
 
     result = page.evaluate(
@@ -419,28 +396,9 @@ def scroll_message(page, amount):
     )
 
 
-def is_message_visible(message):
-
-    try:
-        box = message.bounding_box()
-
-    except:
-        return False
-
-    if not box:
-        return False
-
-    # completely above viewport
-    if box["y"] + box["height"] < 0:
-        return False
-
-    return True
-
-
 # ==========================
 # EXECUTION
 # ==========================
-
 
 def main():
     with sync_playwright() as p:
