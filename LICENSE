@@ -1,0 +1,55 @@
+Copyright (c) 2026 Stanley Chen
+All Rights Reserved.
+
+This software and associated documentation files (the "Software") are the
+exclusive property of the copyright holder. Except as expressly permitted
+below, no rights are granted to any person under this license.
+
+PERMITTED USE
+
+Permission is granted to individuals to access, clone, fork, download, and
+use the Software solely for the following purposes:
+
+- Running the Software locally for private evaluation or testing.
+- Reviewing the source code for educational or evaluation purposes.
+- Modifying a local or forked copy of the Software for personal,
+  non-commercial testing purposes.
+
+Forking this repository on GitHub is permitted for the purposes above only
+and does not grant any rights beyond those stated in this license.
+
+RESTRICTIONS
+
+No permission is granted to:
+
+- Use the Software, in whole or in part, for any commercial purpose.
+- Distribute, publish, sublicense, sell, or provide public or third-party
+  access to the Software or any modified or derivative version of it.
+- Host the Software, or any derivative work based on it, as a public or
+  private service accessible to others.
+- Incorporate any portion of the Software into another project, product,
+  or service, whether open source or proprietary.
+- Copy, modify, or redistribute the Software outside the scope explicitly
+  permitted above.
+
+Any use not expressly permitted by this license requires prior written
+permission from the copyright holder.
+
+DISCLAIMER
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+TERMINATION
+
+Any violation of the terms of this license results in immediate and
+automatic termination of the permissions granted above.
+
+CONTACT
+
+For permission requests beyond the scope of this license, contact the
+copyright holder.
