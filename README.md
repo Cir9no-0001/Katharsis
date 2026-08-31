@@ -1,7 +1,7 @@
 # Katharsis
 
 <p align="center">
-  <img src="Katharsis.png" width="100%">
+  <img src="katharsis.png" width="100%">
 </p>
 
 **Status:** Active Development
