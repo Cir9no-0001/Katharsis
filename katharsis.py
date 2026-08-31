@@ -38,8 +38,8 @@ USERNAME = os.getenv(
     "INSTAGRAM_USERNAME"
 )
 
-DELETE_MODE = False
-MAX_DELETE = 0
+DELETE_MODE = True
+MAX_DELETE = 10
 
 
 # ==========================
@@ -60,6 +60,7 @@ def connect_browser(playwright):
 # MESSAGE OWNERSHIP DETECTOR
 # ==========================
 
+"""
 def check_if_my_message(page, message):
 
     message.hover()
@@ -87,51 +88,107 @@ def check_if_my_message(page, message):
 
     # No matching menu found
     return False
-
+"""
 
 # ==========================
 # SCAN CURRENT MESSAGES
 # ==========================
 
-def scan_messages(page):
-    message_list = get_messages(page)
 
-    print(
-        f"\nMessages loaded: {len(message_list)}"
+def is_unavailable_content(message):
+
+    try:
+        text = message.inner_text().strip()
+
+    except:
+        return False
+
+    return (
+        "Message unavailable" in text
+        or
+        "This content may have been deleted by its owner" in text
+        or
+        "hidden by their privacy settings" in text
     )
+
+
+def scan_messages(page):
 
     deleted_count = 0
 
-    for i, message in enumerate(message_list):
-        text = message.inner_text().strip()
+    while True:
+        if deleted_count >= MAX_DELETE:
+            print("Delete limit reached")
+            break
 
-        print("\n======================")
-        print(f"{i}: {text[:80]}")
+        message_list = get_messages(page)
 
-        if check_if_my_message(page, message):
-            print("MY MESSAGE")
-            if DELETE_MODE:
-                if deleted_count >= MAX_DELETE:
-                    print("Delete limit reached")
-                    break
+        if not message_list:
+            print("No messages found")
+            break
 
-                if unsend_message(page, message):
-                    deleted_count += 1
-                    print(f"Deleted: {deleted_count}/{MAX_DELETE}")
+        deleted_this_round = False
 
-        else:
-            print("PERMISSION DENIED")
+        for i, message in enumerate(message_list):
+            try:
+                text = message.inner_text().strip()
+
+            except:
+                text = "[MEDIA]"
+
+            if not text:
+                text = "[MEDIA]"
+
+            print("\n======================")
+            print(f"{i}: {text[:80]}")
+
+            if unsend_message(page, message):
+                deleted_count += 1
+                print(f"Deleted: {deleted_count}/{MAX_DELETE}")
+
+                deleted_this_round = True
+
+                break
+
+            else:
+                print("Not deletable")
+
+        if not deleted_this_round:
+            print("No more deletable messages visible")
+            break
+
+        page.wait_for_timeout(1000)
 
 
 def get_messages(page):
-    messages = page.locator("div[dir='auto']")
 
     result = []
 
-    for i in range(messages.count()):
-        msg = messages.nth(i)
+    text_messages = page.locator("div[dir='auto']")
+
+    for i in range(text_messages.count()):
+        msg = text_messages.nth(i)
+
         if msg.inner_text().strip():
             result.append(msg)
+
+    media_messages = page.locator("img.x1iyjqo2.x193iq5w.xl1xv1r")
+
+    for i in range(media_messages.count()):
+        result.append(media_messages.nth(i))
+
+    unavailable_messages = page.locator("span[dir='auto']")
+
+    for i in range(unavailable_messages.count()):
+        msg = unavailable_messages.nth(i)
+
+        if is_unavailable_content(msg):
+            parent = msg
+
+            for _ in range(5):
+                parent = parent.locator("..")
+
+            result.append(parent)
 
     return result
 
