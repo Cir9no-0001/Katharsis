@@ -14,7 +14,6 @@ NOTE: IT WONT RUN PROPERLY UNTIL U CHANGE DELETE_MODE AND MAX_DELETE in # CONFIG
 Sections:
     # CONFIGURATION
     # CONNECT TO CHROME
-    # MESSAGE OWNERSHIP DETECTOR
     # SCAN CURRENT MESSAGES
     # MESSAGE UNSENDING
     # SCROLL MESSAGE HISTORY
@@ -39,7 +38,8 @@ USERNAME = os.getenv(
 )
 
 DELETE_MODE = True
-MAX_DELETE = 10
+MAX_DELETE = 5
+SCROLL_INCREMENT = 200
 
 
 # ==========================
@@ -54,41 +54,6 @@ def connect_browser(playwright):
     browser = playwright.chromium.connect_over_cdp(ws_endpoint)
 
     return browser
-
-
-# ==========================
-# MESSAGE OWNERSHIP DETECTOR
-# ==========================
-
-"""
-def check_if_my_message(page, message):
-
-    message.hover()
-    page.wait_for_timeout(700)
-    parent = message
-
-    # Walk UPWARDS the matching menu is found
-    for level in range(10):
-        parent = parent.locator("..")
-        options_button = parent.locator(
-            f"svg[aria-label='See more options for message from {USERNAME}']")
-
-        if options_button.count():
-            print("Found menu at parent level:", level + 1)
-            options_button.first.click()
-            page.wait_for_timeout(500)
-
-            # IMPORTANT: Only owned messages will have unsend button
-            unsend = page.get_by_role("button", name="Unsend")
-            is_mine = unsend.count() > 0
-
-            page.keyboard.press("Escape")
-
-            return is_mine
-
-    # No matching menu found
-    return False
-"""
 
 # ==========================
 # SCAN CURRENT MESSAGES
@@ -117,78 +82,160 @@ def scan_messages(page):
     deleted_count = 0
 
     while True:
+
         if deleted_count >= MAX_DELETE:
             print("Delete limit reached")
             break
 
-        message_list = get_messages(page)
+        messages = get_messages(page)
 
-        if not message_list:
-            print("No messages found")
+        if not messages:
+            print("No messages visible")
             break
 
-        deleted_this_round = False
+        target = messages[-1]
 
-        for i, message in enumerate(message_list):
-            try:
-                text = message.inner_text().strip()
+        box = target.bounding_box()
 
-            except:
-                text = "[MEDIA]"
+        if not box:
+            print("Waiting for render...")
+            page.wait_for_timeout(1000)
+            continue
 
-            if not text:
-                text = "[MEDIA]"
+        print("\n================")
+        print("Checking:")
+        print(
+            (
+                round(box["x"]),
+                round(box["y"]),
+                round(box["width"]),
+                round(box["height"])
+            )
+        )
 
-            print("\n======================")
-            print(f"{i}: {text[:80]}")
+        try:
+            text = target.inner_text().strip()
 
-            if unsend_message(page, message):
-                deleted_count += 1
-                print(f"Deleted: {deleted_count}/{MAX_DELETE}")
+        except:
+            text = ""
 
-                deleted_this_round = True
+        if is_unavailable_content(target):
+            print("[UNAVAILABLE]")
 
-                break
+        elif text:
+            print(text[:80])
 
-            else:
-                print("Not deletable")
+        else:
+            print("[MEDIA]")
 
-        if not deleted_this_round:
-            print("No more deletable messages visible")
-            break
+        # Try deleting current target
+        if DELETE_MODE and unsend_message(page, target):
 
-        page.wait_for_timeout(1000)
+            deleted_count += 1
+
+            print(
+                f"Deleted {deleted_count}/{MAX_DELETE}"
+            )
+
+            # Let Instagram rebuild DOM
+            page.wait_for_timeout(1500)
+
+            continue
+
+        # Not ours -> move upward
+        print("Not deletable, scrolling")
+
+        box = target.bounding_box()
+
+        if box:
+
+            scroll_amount = box["height"] + 100
+
+        else:
+
+            scroll_amount = 500
+
+        scroll_message(
+            page,
+            scroll_amount
+        )
+
+        page.wait_for_timeout(1500)
+
+
+def find_message_container(element):
+    current = element
+
+    for level in range(15):
+        current = current.locator("..")
+
+        try:
+            text = current.inner_text().strip()
+        except:
+            text = ""
+
+        images = current.locator("img").count()
+
+        if text or images:
+            return current
+
+    return None
 
 
 def get_messages(page):
-
     result = []
+    seen = []
 
-    text_messages = page.locator("div[dir='auto']")
+    # Normal text + media detection
+    candidates = page.locator(
+        "div[dir='auto'], img.x1iyjqo2.x193iq5w.xl1xv1r"
+    )
 
-    for i in range(text_messages.count()):
-        msg = text_messages.nth(i)
+    for i in range(candidates.count()):
 
-        if msg.inner_text().strip():
-            result.append(msg)
+        element = candidates.nth(i)
 
-    media_messages = page.locator("img.x1iyjqo2.x193iq5w.xl1xv1r")
+        container = find_message_container(element)
 
-    for i in range(media_messages.count()):
-        result.append(media_messages.nth(i))
+        if container:
 
-    unavailable_messages = page.locator("span[dir='auto']")
+            duplicate = False
+
+            for old in seen:
+                if container == old:
+                    duplicate = True
+                    break
+
+            if not duplicate:
+                seen.append(container)
+                result.append(container)
+
+    # Restore unavailable message detection
+    unavailable_messages = page.locator(
+        "span[dir='auto']"
+    )
 
     for i in range(unavailable_messages.count()):
+
         msg = unavailable_messages.nth(i)
 
         if is_unavailable_content(msg):
+
             parent = msg
 
             for _ in range(5):
                 parent = parent.locator("..")
 
-            result.append(parent)
+            duplicate = False
+
+            for old in seen:
+                if parent == old:
+                    duplicate = True
+                    break
+
+            if not duplicate:
+                seen.append(parent)
+                result.append(parent)
 
     return result
 
@@ -198,46 +245,64 @@ def get_messages(page):
 # ==========================
 
 def unsend_message(page, message):
+
     message.hover()
     page.wait_for_timeout(700)
+
     parent = message
 
-    for level in range(10):
+    for level in range(15):
+
         parent = parent.locator("..")
+
         options_button = parent.locator(
-            f"svg[aria-label='See more options for message from {USERNAME}']")
+            f"svg[aria-label='See more options for message from {USERNAME}']"
+        )
 
         if options_button.count():
-            print("Opening message menu...")
+
+            print("Found menu at level:", level + 1)
 
             options_button.first.click()
-            page.wait_for_timeout(500)
+            page.wait_for_timeout(700)
 
-            unsend = page.get_by_role("button", name="Unsend")
+            unsend = page.get_by_role(
+                "button",
+                name="Unsend"
+            )
 
             if not unsend.count():
-                print("Unsend unavailable")
+
+                print("Menu opened but Unsend missing")
+
                 page.keyboard.press("Escape")
+
                 return False
 
-            print("Clicking Unsend...")
+            print("Clicking Unsend")
 
             unsend.first.click()
 
-            page.wait_for_timeout(500)
+            page.wait_for_timeout(700)
 
-            confirm = page.get_by_role("button", name="Unsend")
+            confirm = page.get_by_role(
+                "button",
+                name="Unsend"
+            )
 
             if confirm.count():
-                print("Confirming...")
+
+                print("Confirming Unsend")
+
                 confirm.first.click()
+
                 page.wait_for_timeout(1000)
 
             print("Removed")
 
             return True
 
-    print("Could not locate menu")
+    print("Could not find message menu")
 
     return False
 
@@ -246,42 +311,131 @@ def unsend_message(page, message):
 # SCROLL MESSAGE HISTORY
 # ==========================
 
-def scroll_up(page):
+def scroll_past_message(page, message):
 
-    print("Loading older messages...")
+    box = message.bounding_box()
 
-    result = page.evaluate("""
-    () => {
-        const elements = [
-            ...document.querySelectorAll("*")
-        ];
+    if not box:
+        print("Could not measure message")
+        return False
 
-        const target = elements.find(e => {
-            const style = getComputedStyle(e);
-            return (
-                style.overflowY === "scroll" &&
-                e.scrollHeight > e.clientHeight
+    height = box["height"]
+
+    print(
+        f"Scrolling past message height: {height}px"
+    )
+
+    result = page.evaluate(
+        """
+        (amount) => {
+
+            const elements = [
+                ...document.querySelectorAll("*")
+            ];
+
+            const target = elements.find(e => {
+
+                const style = getComputedStyle(e);
+
+                return (
+                    style.overflowY === "scroll" &&
+                    e.scrollHeight > e.clientHeight
+                );
+
+            });
+
+            if (!target) {
+                return null;
+            }
+
+            const before = target.scrollTop;
+
+            target.scrollBy(
+                0,
+                -amount
             );
 
-        });
-
-        if (!target) {
-            return null;
+            return {
+                before: before,
+                after: target.scrollTop
+            };
         }
-
-        const before = target.scrollTop;
-        target.scrollBy(0,-800);
-
-        return {
-            before: before,
-            after: target.scrollTop,
-            height: target.scrollHeight
-        };
-    }
-    """)
+        """,
+        height
+    )
 
     print(result)
-    page.wait_for_timeout(2000)
+
+    page.wait_for_timeout(1500)
+
+    return True
+
+
+def scroll_message(page, amount):
+
+    result = page.evaluate(
+        """
+        (amount) => {
+
+            const elements = [
+                ...document.querySelectorAll("*")
+            ];
+
+            const target = elements.find(e => {
+
+                const style = getComputedStyle(e);
+
+                return (
+                    style.overflowY === "scroll" &&
+                    e.scrollHeight > e.clientHeight
+                );
+
+            });
+
+            if (!target) {
+                return null;
+            }
+
+            const before = target.scrollTop;
+
+            target.scrollBy(
+                0,
+                -amount
+            );
+
+            return {
+                before: before,
+                after: target.scrollTop
+            };
+        }
+        """,
+        amount
+    )
+
+    print(
+        "Scrolled:",
+        amount,
+        result
+    )
+
+
+def is_message_visible(message):
+
+    try:
+        box = message.bounding_box()
+
+    except:
+        return False
+
+    if not box:
+        return False
+
+    # completely above viewport
+    if box["y"] + box["height"] < 0:
+        return False
+
+    return True
+
 
 # ==========================
 # EXECUTION
@@ -296,9 +450,7 @@ def main():
         page = browser.contexts[0].pages[0]
         print("Current page:", page.url)
 
-        for i in range(5):
-            scan_messages(page)
-            scroll_up(page)
+        scan_messages(page)
 
         print("\nScan complete")
 
