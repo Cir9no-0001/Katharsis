@@ -1,16 +1,22 @@
 # Katharsis
 
+# Katharsis
+
 <p align="center">
+
   <img src="katharsis.png" width="100%">
+
 </p>
 
 **Status:** Active Development
 
-![Version](https://img.shields.io/badge/version-v1.0.0-blue)
+![Version](https://img.shields.io/badge/version-v1.1.0-blue)
+
 ![Python](https://img.shields.io/badge/python-3.12-blue)
+
 ![Playwright](https://img.shields.io/badge/automation-Playwright-green)
 
-> A Playwright-based browser automation project for inspecting, unsending, and testing Instagram message interactions through an existing Chrome session using the Chrome DevTools Protocol (CDP).
+> A Playwright-based browser automation tool for scanning, detecting, and managing Instagram messages through an existing Chrome session using the Chrome DevTools Protocol (CDP).
 
 Last updated: 2026-08-31
 
@@ -20,18 +26,21 @@ Last updated: 2026-08-31
 
 ## What is this?
 
-Katharsis is a browser automation project built with Python and Playwright that explores controlling an existing Chrome session through the Chrome DevTools Protocol (CDP).
+Katharsis is a Python browser automation project that connects to an existing Chrome session through the Chrome DevTools Protocol (CDP) and automates Instagram message management workflows.
 
-The project focuses on understanding how modern web applications dynamically render content, manage interactive elements, and handle user actions through browser automation.
+The project explores how modern JavaScript-based applications dynamically render content, expose interactive controls, and handle user actions through browser automation.
+
+Currently, Katharsis focuses on identifying messages, determining available actions, and safely automating message removal through Playwright.
 
 Katharsis currently supports:
 
-- Connecting to an existing Chrome browser session
-- Inspecting dynamic page structures and DOM elements
-- Identifying message containers and scrollable regions
-- Detecting available message actions
-- Automating browser interactions through Playwright
-- Testing reliable selectors against dynamically generated elements
+- Connecting to an existing Chrome browser session through CDP
+- Inspecting dynamically generated DOM structures
+- Detecting text, media, and unavailable message types
+- Identifying user-owned messages through available browser actions
+- Automating Instagram message unsending workflows
+- Navigating dynamically loaded message history
+- Testing reliable automation strategies against changing web interfaces
 
 ## Tech Stack
 
@@ -45,41 +54,58 @@ Katharsis currently supports:
 
 ### Chrome Session Integration
 
-- Connects to an already-running Chrome instance through CDP
+- Connects directly to an already-running Chrome instance through CDP
 - Uses the user's existing authenticated browser session
-- Avoids storing login credentials or session cookies
+- Avoids storing passwords, cookies, or authentication tokens
+- Allows automation without rebuilding login workflows
 
-### DOM Inspection & Reverse Engineering
+### Dynamic Message Detection
 
-- Analyzes dynamically generated page structures
-- Identifies changing parent-child relationships
-- Tests reliable selectors for automation workflows
+- Identifies visible Instagram message elements
+- Supports multiple message types:
+  - Text messages
+  - Media messages
+  - Unavailable/deleted content messages
+- Extracts message metadata for analysis and tracking
+- Handles dynamically generated page structures
 
-### Message Automation Framework
+### Message Ownership Detection
 
-- Scans visible messages
-- Detects message ownership
-- Locates available message actions
-- Supports automated message interaction workflows
+- Determines whether messages belong to the authenticated user
+- Uses Instagram's available message actions instead of manually parsing sender information
+- Prevents attempting unsupported actions on other users' messages
 
-### Dynamic Scrolling
+### Automated Message Removal
 
-- Identifies scrollable containers automatically
-- Navigates through dynamically loaded content
-- Tests loading older message history
+- Locates available message controls
+- Opens message action menus
+- Executes unsend workflows
+- Supports configurable deletion limits for safer testing
+
+### Dynamic History Navigation
+
+- Detects scrollable message containers automatically
+- Navigates through older conversation history
+- Handles dynamically loaded content while scanning messages
+- Uses message signatures to verify movement through history
 
 ## Why was this built?
 
-Modern websites are increasingly dynamic, relying heavily on JavaScript-generated content and changing DOM structures. Traditional automation methods often fail when elements are recreated or hidden behind interactive states.
+Real story? I wanted to automate mass unsending messages on Instagram without relying on sketchy extensions that wanted my cookies.
 
-Katharsis was created as a learning project to explore browser automation beyond simple scripting by understanding:
+Modern web applications are heavily dependent on JavaScript rendering, dynamic content loading, and frequently changing DOM structures. Traditional automation methods often fail because elements may not exist until runtime or may be recreated during interaction.
 
-- How browsers expose automation interfaces
-- How dynamic websites structure their content
-- How reliable automation selectors are created
-- How Playwright can interact with complex web applications
+Katharsis was created to explore browser automation at a deeper level by understanding:
 
-The project serves as a foundation for experimenting with browser automation, web scraping techniques, and future automation tooling.
+- How browsers expose automation interfaces through CDP
+- How dynamic web applications structure and render content
+- How Playwright interacts with complex user interfaces
+- How reliable automation workflows can be designed around unstable DOM environments
+- How destructive automation tasks can be performed safely
+
+The project serves as a foundation for experimenting with browser automation, DOM analysis, and future automation tooling.
+
+---
 
 ## License
 
