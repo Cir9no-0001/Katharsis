@@ -11,7 +11,6 @@ Description:
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-
 DEVTOOLS_FILE = Path.home() / "AppData/Local/Google/Chrome/User Data/DevToolsActivePort"
 
 
@@ -45,7 +44,6 @@ def find_message_container(element):
 
         images = current.locator("img").count()
 
-        # Looking for a parent that represents a whole message
         if text or images:
 
             return current, level + 1
@@ -54,8 +52,6 @@ def find_message_container(element):
 
 
 def scan_messages(page):
-
-    # Same detection style as your working crawler
     candidates = page.locator(
         "div[dir='auto'], img.x1iyjqo2.x193iq5w.xl1xv1r"
     )
@@ -74,8 +70,6 @@ def scan_messages(page):
         container, level = find_message_container(element)
 
         if container:
-
-            # avoid duplicates
             found = False
 
             for old in seen:

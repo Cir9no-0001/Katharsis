@@ -1,19 +1,15 @@
 # Katharsis
 
-# Katharsis
-
 <p align="center">
-
   <img src="katharsis.png" width="100%">
-
 </p>
+
+---
 
 **Status:** Active Development
 
 ![Version](https://img.shields.io/badge/version-v1.1.0-blue)
-
 ![Python](https://img.shields.io/badge/python-3.12-blue)
-
 ![Playwright](https://img.shields.io/badge/automation-Playwright-green)
 
 > A Playwright-based browser automation tool for scanning, detecting, and managing Instagram messages through an existing Chrome session using the Chrome DevTools Protocol (CDP).
