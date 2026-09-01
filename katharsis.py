@@ -1,7 +1,7 @@
 """
 File Name: katharsis.py
 Author: Stanley Chen
-Version: 1.0.1
+Version: 1.1.0
 Date Created: August 31, 2026
 Description: 
     Automates Instagram message scanning and removal using Playwright.
