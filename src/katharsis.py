@@ -37,9 +37,10 @@ USERNAME = os.getenv(
     "INSTAGRAM_USERNAME"
 )
 
+# IT WONT RUN PROPERLY UNTIL U CHANGE DELETE_MODE AND MAX_DELETE
 DELETE_MODE = True
 MAX_DELETE = 100
-SCROLL_INCREMENT = 25
+SCROLL_INCREMENT = 100
 
 
 # ==========================
@@ -177,29 +178,7 @@ def scan_messages(page):
 
         # Jump if cannot delete message/no ownership
         target_signature = create_message_signature(target)
-        scroll_amount = page.evaluate("""
-        () => {
-            const elements = [...document.querySelectorAll("*")];
-
-            const target = elements.find(e => {
-                const style = getComputedStyle(e);
-                return (
-                    (style.overflowY === "scroll" || style.overflowY === "auto") &&
-                    e.scrollHeight > e.clientHeight
-                );
-            });
-
-            if (!target) {
-                return 50;
-            }
-
-            return Math.round(target.clientHeight * 0.15);
-        }
-        """)
-
-        if (scroll_amount < 25):
-            scroll_amount = 25
-
+        scroll_amount = 100
 
         while True:
             scroll_message(page, scroll_amount)
@@ -222,7 +201,7 @@ def scan_messages(page):
 
             print("Same message still visible, increasing scroll")
 
-            scroll_amount += SCROLL_INCREMENT
+            scroll_amount = scroll_amount + SCROLL_INCREMENT
 
             if scroll_amount > 1200:
                 print("Could not move past message")
