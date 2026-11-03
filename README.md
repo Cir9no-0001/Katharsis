@@ -101,6 +101,8 @@ Katharsis was created to explore browser automation at a deeper level by underst
 
 The project serves as a foundation for experimenting with browser automation, DOM analysis, and future automation tooling.
 
+This project will also SOON link with my future personal social circle manager/OSINTer project (recording and analysing messages to never forget things, stay tuned?)
+
 ---
 
 ## License
