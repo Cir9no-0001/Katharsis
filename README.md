@@ -6,7 +6,7 @@
 
 ---
 
-**Status:** Active Development
+**Status:** Active Development (down)
 
 ![Version](https://img.shields.io/badge/version-v1.1.0-blue)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
@@ -14,7 +14,7 @@
 
 > A Playwright-based browser automation tool for scanning, detecting, and managing Instagram messages through an existing Chrome session using the Chrome DevTools Protocol (CDP).
 
-Last updated: 2026-08-31
+Last updated: 2026-11-03
 
 ---
 
