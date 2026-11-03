@@ -152,9 +152,9 @@ def scroll_up(page, message):
 
     result = page.evaluate(
         """
-        (distance) => {
+        ({distance, messageId}) => {
             const target = document.querySelector(
-                '[data-katharsis-hover-scroll]'
+                `[data-katharsis-hover-scroll="${messageId}"]`
             );
 
             if (!target) return null;
@@ -187,7 +187,10 @@ def scroll_up(page, message):
             return null;
         }
         """,
-        distance
+        {
+            "distance": distance,
+            "messageId": message["id"]
+        }
     )
 
     if result is None:
