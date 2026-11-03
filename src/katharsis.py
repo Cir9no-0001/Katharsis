@@ -60,9 +60,10 @@ def connect_browser(playwright):
 # SCAN CURRENT MESSAGES
 # ==========================
 
+# Strip message inner text and returns True if message is unavailable, deleted, or hidden by privacy settings
+
 
 def is_unavailable_content(message):
-
     try:
         text = message.inner_text().strip()
 
@@ -131,6 +132,14 @@ def scan_messages(page):
             break
 
         target = messages[-1]
+
+        target.evaluate("""
+            element => {
+                element.style.outline = "3px solid red";
+                element.style.backgroundColor = "rgba(255, 0, 0, 0.15)";
+            }
+        """)
+
         box = target.bounding_box()
 
         if not box:
