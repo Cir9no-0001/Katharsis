@@ -30,14 +30,14 @@ from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv
 import os
 
+
 DEVTOOLS_FILE = Path.home() / "AppData/Local/Google/Chrome/User Data/DevToolsActivePort"
 
 load_dotenv()
-USERNAME = os.getenv(
-    "INSTAGRAM_USERNAME"
-)
+# Remember to set this in your .env file
+USERNAME = os.getenv("INSTAGRAM_USERNAME")
 
-# IT WONT RUN PROPERLY UNTIL U CHANGE DELETE_MODE AND MAX_DELETE
+# Flow control
 DELETE_MODE = True
 MAX_DELETE = 100
 SCROLL_INCREMENT = 100
@@ -47,6 +47,7 @@ SCROLL_INCREMENT = 100
 # CONNECT TO CHROME
 # ==========================
 
+# Connect to a running instance of Chrome using the DevTools protocol
 def connect_browser(playwright):
     lines = DEVTOOLS_FILE.read_text().splitlines()
     port = lines[0]
@@ -77,6 +78,8 @@ def is_unavailable_content(message):
         or
         "hidden by their privacy settings" in text
     )
+
+# Message fingerprinting using metadata
 
 
 def create_message_signature(message):
@@ -243,7 +246,7 @@ def get_messages(page):
     # Normal text + media detection below
 
     # VERY IMPORTANT: THIS SHIT CHANGES AND BREAKS EVERYTHING IF IG UPDATES
-    candidates = page.locator("div[dir='auto'], img.x1iyjqo2.x193iq5w.xl1xv1r")
+    candidates = page.locator("div[dir='auto'], img.x1iyjqo2 x193iq5w xl1xv1r")
     # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     for i in range(candidates.count()):
