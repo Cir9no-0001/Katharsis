@@ -6,7 +6,7 @@
 
 ---
 
-**Status:** Active Development (down)
+**Status:** Paused (Instagram UI changes broke detection)
 
 ![Version](https://img.shields.io/badge/version-v1.1.0-blue)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
